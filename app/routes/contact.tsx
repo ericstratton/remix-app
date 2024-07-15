@@ -1,5 +1,5 @@
-import { useEffect } from 'react';
-import { Form, json, useActionData } from '@remix-run/react';
+import { useEffect, useState } from 'react';
+import { Form, json, useActionData, useLoaderData } from '@remix-run/react';
 import { ActionFunctionArgs } from '@remix-run/node';
 import {
    Typography,
@@ -14,16 +14,29 @@ import {
 import { ErrorResponse, Resend } from 'resend';
 import { MdSend } from 'react-icons/md';
 import { renderToString } from 'react-dom/server';
+import useRecaptcha from '~/hooks/userecaptcha';
+import verifyRecaptcha from '~/actions/verifyrecaptcha';
 
 const resend = new Resend(process.env.RESEND_API_KEY);
+
+export const loader = () => {
+   const siteKey = process.env.RECAPTCHA_SITE_KEY;
+
+   return json({ siteKey });
+};
 
 export const action = async ({ request }: ActionFunctionArgs) => {
    const formData = await request.formData();
    const name = String(formData.get('name'));
    const email = String(formData.get('email'));
+   const token = String(formData.get('token'));
+
+   const { score } = await verifyRecaptcha(token);
+   if (!score || score < 0.5) {
+      return json({ error: { message: 'Failed to verify reCAPTCHA' } }, 400);
+   }
 
    const html = renderToString(<Email recipient={name} />);
-
    const { data, error } = await resend.emails.send({
       from: 'contact@ericstratton.info',
       to: [email],
@@ -38,7 +51,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
    return json({ ...data, sender: name }, 200);
 };
 
-type ActionError = { error: ErrorResponse };
+type ActionError = { error: ErrorResponse | { message: string } };
 type ActionSuccess = { sender: string; id?: string };
 
 function processData(
@@ -64,6 +77,28 @@ function processData(
 export default function Contact() {
    const data = useActionData<typeof action>();
    const { toast } = useToast();
+   const { siteKey } = useLoaderData<typeof loader>();
+   const { ready, getToken } = useRecaptcha();
+
+   const [token, setToken] = useState<string>();
+
+   useEffect(() => {
+      if (!ready) {
+         return;
+      }
+      let ignore = false;
+      const getRecaptchaToken = async () => {
+         if (ignore) {
+            return;
+         }
+         const token = await getToken(siteKey);
+         setToken(token);
+      };
+      getRecaptchaToken();
+      return () => {
+         ignore = true;
+      };
+   }, [getToken, ready, siteKey]);
 
    useEffect(() => {
       const processed = processData(data);
@@ -122,6 +157,7 @@ export default function Contact() {
                            Send
                         </Typography>
                      </Button>
+                     <Input type="hidden" name="token" value={token} />
                   </Form>
                </CardContent>
             </Card>

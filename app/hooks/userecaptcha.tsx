@@ -1,5 +1,7 @@
 import { useCallback, useEffect, useState } from 'react';
 
+// https://developers.google.com/recaptcha/docs/enterprise/verify
+// https://developers.google.com/recaptcha/docs/enterprise/clientapi#execute
 declare global {
    interface Window {
       grecaptcha: {
@@ -8,9 +10,6 @@ declare global {
             siteKey: string,
             options: { action: string }
          ) => Promise<string>;
-      };
-      ENV: {
-         SITE_PUBLIC_KEY: string;
       };
    }
 }
@@ -35,23 +34,19 @@ const useRecaptcha = () => {
       }
    }, []);
 
-   const getToken = useCallback(
-      async (action = 'submit') => {
-         if (!ready) {
-            throw new Error('Recaptcha is not ready');
-         }
+   const getToken = useCallback(async (key?: string, action = 'submit') => {
+      if (!key) {
+         throw new Error('Recaptcha site key is required');
+      }
 
-         const siteKey = window.ENV.SITE_PUBLIC_KEY;
-         try {
-            const token = await window.grecaptcha.execute(siteKey, { action });
-            return token;
-         } catch (error) {
-            console.error('Error executing reCAPTCHA', error);
-            throw error;
-         }
-      },
-      [ready]
-   );
+      try {
+         const token = await window.grecaptcha.execute(key, { action });
+         return token;
+      } catch (error) {
+         console.error('Error executing reCAPTCHA', error);
+         throw error;
+      }
+   }, []);
 
    return { ready, getToken };
 };

@@ -1,14 +1,17 @@
 import {
+   json,
    Links,
    Meta,
    Scripts,
    ScrollRestoration,
+   useLoaderData,
    useLocation,
    useOutlet,
 } from '@remix-run/react';
 import './tailwind.css';
 import { Footer, Header, NavRail, Toaster } from '~/components';
 import { AnimatePresence, motion } from 'framer-motion';
+import { useEffect } from 'react';
 
 export function Layout({ children }: { children: React.ReactNode }) {
    return (
@@ -31,9 +34,26 @@ export function Layout({ children }: { children: React.ReactNode }) {
    );
 }
 
+export const loader = () => {
+   const siteKey = process.env.RECAPTCHA_SITE_KEY;
+
+   return json({ siteKey });
+};
+
 export default function App() {
    const location = useLocation();
    const outlet = useOutlet();
+   const { siteKey } = useLoaderData<typeof loader>();
+
+   useEffect(() => {
+      const script = document.createElement('script');
+      script.async = true;
+      script.src = `https://www.google.com/recaptcha/api.js?render=${siteKey}`;
+      document.head.appendChild(script);
+      return () => {
+         document.head.removeChild(script);
+      };
+   }, [siteKey]);
 
    return (
       <div className="mx-auto px-4 w-full max-w-lg sm:max-w-xl md:max-w-screen-sm lg:max-w-screen-md xl:max-w-screen-lg">
