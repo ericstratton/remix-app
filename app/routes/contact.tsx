@@ -1,5 +1,11 @@
 import { useEffect, useState } from 'react';
-import { Form, json, useActionData, useLoaderData } from '@remix-run/react';
+import {
+   Form,
+   json,
+   Link,
+   useActionData,
+   useLoaderData,
+} from '@remix-run/react';
 import { ActionFunctionArgs } from '@remix-run/node';
 import {
    Typography,
@@ -13,6 +19,7 @@ import {
 } from '~/components';
 import { ErrorResponse, Resend } from 'resend';
 import { MdSend } from 'react-icons/md';
+import { FaLinkedin, FaGithub } from 'react-icons/fa6';
 import { renderToString } from 'react-dom/server';
 import useRecaptcha from '~/hooks/userecaptcha';
 import verifyRecaptcha from '~/actions/verifyrecaptcha';
@@ -38,9 +45,9 @@ export const action = async ({ request }: ActionFunctionArgs) => {
 
    const html = renderToString(<Email recipient={name} />);
    const { data, error } = await resend.emails.send({
-      from: 'contact@ericstratton.info',
+      from: 'Eric Stratton <contact@ericstratton.info>',
       to: [email],
-      subject: 'Hello world',
+      subject: 'Thank you for reaching out!',
       html,
    });
 
@@ -76,19 +83,20 @@ function processData(
 
 export default function Contact() {
    const data = useActionData<typeof action>();
-   const { toast } = useToast();
-   const { siteKey } = useLoaderData<typeof loader>();
+   const loaderData = useLoaderData<typeof loader>();
    const { ready, getToken } = useRecaptcha();
+   const { toast } = useToast();
 
-   const [token, setToken] = useState<string>();
+   const [token, setToken] = useState<string>('');
 
+   const siteKey = loaderData?.siteKey;
    useEffect(() => {
       if (!ready) {
          return;
       }
       let ignore = false;
       const getRecaptchaToken = async () => {
-         if (ignore) {
+         if (ignore || !siteKey) {
             return;
          }
          const token = await getToken(siteKey);
@@ -98,7 +106,7 @@ export default function Contact() {
       return () => {
          ignore = true;
       };
-   }, [getToken, ready, siteKey]);
+   }, [getToken, siteKey, ready]);
 
    useEffect(() => {
       const processed = processData(data);
@@ -127,7 +135,7 @@ export default function Contact() {
             </Typography>
          </div>
          <div>
-            <Card className="sm:w-96 bg-zinc-100">
+            <Card className="sm:w-96 bg-zinc-100 mb-4">
                <CardHeader>
                   <Typography element="p" as="lead">
                      Get in touch
@@ -161,6 +169,29 @@ export default function Contact() {
                   </Form>
                </CardContent>
             </Card>
+         </div>
+         <div>
+            <Typography className="mb-4" element="p" as="largeText">
+               If a contact form is not your thing, you can reach out to me
+               on LinkedIn. Or, if you&apos;re interested in seeing the code for this
+               site, you can find it on my Github.
+            </Typography>
+            <div className="flex gap-4">
+               <a
+                  href="https://www.linkedin.com/in/eric-j-stratton/"
+                  target="_blank"
+                  rel="noopener noreferrer"
+               >
+                  <FaLinkedin className="mr-2 text-5xl" />
+               </a>
+               <a
+                  href="https://github.com/ericstratton"
+                  target="_blank"
+                  rel="noopener noreferrer"
+               >
+                  <FaGithub className="mr-2 text-5xl" />
+               </a>
+            </div>
          </div>
       </div>
    );
