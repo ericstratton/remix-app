@@ -1,11 +1,6 @@
 import { useEffect, useState } from 'react';
-import {
-   Form,
-   json,
-   useActionData,
-   useLoaderData,
-} from '@remix-run/react';
-import { ActionFunctionArgs } from '@remix-run/node';
+import { Form, json, useActionData, useLoaderData } from '@remix-run/react';
+import type { ActionFunctionArgs, MetaFunction } from '@remix-run/node';
 import {
    Typography,
    Button,
@@ -24,6 +19,13 @@ import useRecaptcha from '~/hooks/userecaptcha';
 import verifyRecaptcha from '~/actions/verifyrecaptcha';
 
 const resend = new Resend(process.env.RESEND_API_KEY);
+
+export const meta: MetaFunction = () => {
+   return [
+      { title: 'Contact Me' },
+      { name: 'description', content: 'Reach out!' },
+   ];
+};
 
 export const loader = () => {
    const siteKey = process.env.RECAPTCHA_SITE_KEY;
@@ -171,9 +173,9 @@ export default function Contact() {
          </div>
          <div>
             <Typography className="mb-4" element="p" as="largeText">
-               If a contact form is not your thing, you can reach out to me
-               on LinkedIn. Or, if you&apos;re interested in seeing the code for this
-               site, you can find it on my Github.
+               If a contact form is not your thing, you can reach out to me on
+               LinkedIn. Or, if you&apos;re interested in seeing the code for
+               this site, you can find it on my Github.
             </Typography>
             <div className="flex gap-4">
                <a

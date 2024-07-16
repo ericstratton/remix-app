@@ -3,8 +3,8 @@ import type { MetaFunction } from '@remix-run/node';
 
 export const meta: MetaFunction = () => {
    return [
-      { title: "Eric Stratton's Portfolio Site" },
-      { name: 'description', content: 'Just some stuff about me.' },
+      { title: "Hi, I'm Eric Stratton" },
+      { name: 'description', content: 'Welcome to my page.' },
    ];
 };
 

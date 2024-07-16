@@ -1,7 +1,15 @@
+import type { MetaFunction } from '@remix-run/node';
 import { Typography, Image } from '~/components';
 
 import collatz from '~/images/collatz.jpg';
 import climbing from '~/images/climbing.jpg';
+
+export const meta: MetaFunction = () => {
+   return [
+      { title: "About Me" },
+      { name: 'description', content: 'Just some stuff about me.' },
+   ];
+};
 
 export default function About() {
    return (
